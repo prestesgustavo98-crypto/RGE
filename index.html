@@ -70,6 +70,68 @@
 
   @keyframes toast-in{ from{ transform:translateY(12px); opacity:0;} to{ transform:translateY(0); opacity:1;} }
   .toast{ animation:toast-in .25s ease; }
+
+  /* ================= RESPONSIVO / MOBILE ================= */
+
+  /* Overlay escuro atrás do menu lateral quando aberto no mobile */
+  #sidebarOverlay{ background:rgba(0,0,0,.4); }
+
+  @media (max-width: 767px){
+    /* Sidebar vira um menu "gaveta" que desliza por cima do conteúdo */
+    aside{
+      position:fixed; inset:0 auto 0 0; z-index:50;
+      transform:translateX(-100%);
+      transition:transform .25s ease;
+      width:78vw; max-width:280px;
+    }
+    aside.sidebar-open{ transform:translateX(0); }
+
+    /* Reduz respiro geral das seções no celular */
+    main section{ padding:1rem !important; }
+
+    /* Cards do dashboard: 2 colunas em vez de 4 */
+    #section-dashboard .grid-cols-1.md\:grid-cols-4{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:.75rem; }
+    #section-dashboard .card p.font-display{ font-size:1.4rem; }
+
+    /* Financeiro: cards de resumo em 1 coluna */
+    #section-financeiro .grid-cols-3{ grid-template-columns:repeat(1,minmax(0,1fr)); max-width:100%; }
+
+    /* Cabeçalhos de seção empilham em vez de ficar lado a lado */
+    main section > .flex.items-end.justify-between{
+      flex-direction:column; align-items:flex-start; gap:.6rem;
+    }
+    main section > .flex.items-end.justify-between > *{ width:100%; }
+    main section > .flex.items-end.justify-between button{ width:100%; }
+    #section-financeiro .flex.gap-2{ width:100%; }
+    #section-financeiro .flex.gap-2 input,
+    #section-financeiro .flex.gap-2 button{ flex:1 1 0; width:auto; }
+
+    /* Tabelas: permitem rolagem horizontal em vez de espremer colunas */
+    .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .table-scroll table{ min-width:640px; }
+
+    /* Modais: menos padding e ocupam quase a tela toda */
+    .card.max-w-lg, .card.max-w-md{ padding:1.1rem; max-width:100%; }
+
+    /* Formulários dentro dos modais: grids viram 1 coluna */
+    #formAgendamento .grid-cols-3,
+    #formAgendamento .grid-cols-2,
+    #formCliente .grid-cols-2,
+    #formFinanceiro .grid-cols-2{
+      grid-template-columns:repeat(1,minmax(0,1fr)); gap:.6rem;
+    }
+
+    /* Calendário: reduz altura e permite toolbar quebrar linha */
+    .fc .fc-toolbar{ flex-direction:column; gap:.5rem; align-items:stretch; }
+    .fc .fc-toolbar-chunk{ display:flex; justify-content:center; }
+    #section-agenda .card.p-4{ padding:.6rem; }
+  }
+
+  /* Botão hamburguer só aparece no mobile */
+  #menuToggle{ display:none; }
+  @media (max-width: 767px){
+    #menuToggle{ display:inline-flex; }
+  }
 </style>
 </head>
 <body class="text-[#2a2a2a]">
@@ -107,6 +169,9 @@
 <!-- ============== APP PRINCIPAL ============== -->
 <div id="app" class="hidden min-h-screen flex">
 
+  <!-- Overlay para fechar o menu no mobile -->
+  <div id="sidebarOverlay" class="fixed inset-0 z-40 hidden"></div>
+
   <!-- Sidebar -->
   <aside class="w-60 shrink-0 flex flex-col justify-between" style="background:var(--graphite);">
     <div>
@@ -129,6 +194,14 @@
 
   <!-- Conteúdo -->
   <main class="flex-1 min-h-screen overflow-y-auto rose-scroll">
+
+    <!-- Barra superior mobile com botão hamburguer -->
+    <div class="md:hidden flex items-center gap-3 px-4 py-3 border-b border-[#efe6e3] bg-white sticky top-0 z-30">
+      <button id="menuToggle" class="w-9 h-9 items-center justify-center rounded-lg border border-[#e0d6d3]">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <span class="font-display text-lg">Rose Nails</span>
+    </div>
 
     <!-- ===== DASHBOARD ===== -->
     <section id="section-dashboard" class="p-8">
@@ -183,7 +256,7 @@
       </div>
       <div class="grad-line w-16 mb-6"></div>
       <input id="buscaCliente" placeholder="Buscar por nome ou telefone…" class="w-full max-w-sm mb-4 border border-[#e0d6d3] rounded-lg px-3 py-2 text-sm">
-      <div class="card overflow-hidden">
+      <div class="card overflow-hidden table-scroll">
         <table class="w-full text-sm">
           <thead class="bg-[#f8f3f1] text-[#8a7f7c] uppercase text-xs">
             <tr>
@@ -215,7 +288,7 @@
         <div class="card p-4"><p class="text-xs text-[#8a7f7c] uppercase">Saldo</p><p id="finSaldo" class="font-display text-2xl">R$ 0,00</p></div>
       </div>
 
-      <div class="card overflow-hidden">
+      <div class="card overflow-hidden table-scroll">
         <table class="w-full text-sm">
           <thead class="bg-[#f8f3f1] text-[#8a7f7c] uppercase text-xs">
             <tr>
@@ -487,12 +560,26 @@ function initApp() {
       document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
       document.getElementById('section-' + btn.dataset.section).classList.remove('hidden');
       if (btn.dataset.section === 'agenda') calendar.render();
+      closeSidebar();
     });
   });
 
   document.querySelectorAll('.modal-close').forEach(btn => {
     btn.addEventListener('click', () => closeModal(btn.dataset.modal));
   });
+
+  // Menu mobile (gaveta lateral)
+  const asideEl = document.querySelector('aside');
+  const overlayEl = document.getElementById('sidebarOverlay');
+  document.getElementById('menuToggle').addEventListener('click', () => {
+    asideEl.classList.add('sidebar-open');
+    overlayEl.classList.remove('hidden');
+  });
+  overlayEl.addEventListener('click', closeSidebar);
+  function closeSidebar(){
+    asideEl.classList.remove('sidebar-open');
+    overlayEl.classList.add('hidden');
+  }
 
   const hoje = new Date().toISOString().slice(0, 7);
   document.getElementById('dashMonth').value = hoje;
@@ -568,16 +655,24 @@ let servicosCache = [];
 
 function setupCalendar() {
   const calendarEl = document.getElementById('calendar');
+  const isMobile = window.innerWidth < 768;
   calendar = new FullCalendar.Calendar(calendarEl, {
     locale: 'pt-br',
-    height: 680,
-    headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' },
-    initialView: 'timeGridWeek',
+    height: isMobile ? 520 : 680,
+    headerToolbar: isMobile
+      ? { left: 'prev,next today', center: '', right: 'title' }
+      : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' },
+    initialView: isMobile ? 'timeGridDay' : 'timeGridWeek',
     slotMinTime: '08:00:00',
     slotMaxTime: '19:00:00',
     events: fetchEventosCalendario,
     dateClick: (info) => openModalAgendamento(null, info.dateStr),
     eventClick: (info) => openModalAgendamento(info.event.extendedProps.raw)
+  });
+
+  window.addEventListener('resize', () => {
+    const mobileNow = window.innerWidth < 768;
+    calendar.setOption('height', mobileNow ? 520 : 680);
   });
 }
 
