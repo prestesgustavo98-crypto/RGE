@@ -399,7 +399,7 @@
 /* =========================================================
    CONFIGURAÇÃO — troque pela URL do seu Web App implantado
    ========================================================= */
-const API_URL = 'https://script.google.com/macros/s/AKfycbyymfvl3Ed-Ik0YSbkAKR-q_Ry_04s4k7ZBxS_BRIkzT13bhIrbrd9S6W4Q69TOh-jC/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzVSlqQe92ejAaAuUBQKFPkdGH-QUTYxFXEKNMjGvxC6tmOr6FShQOO3acy8kxCCAjc0g/exec';
 
 const TOKEN_KEY = 'rosenails_token';
 
@@ -679,6 +679,8 @@ async function salvarAgendamento(e) {
   closeModal('modalAgendamento');
   calendar.refetchEvents();
   loadDashboard();
+  loadFinanceiro();
+  loadClientes();
 }
 
 async function excluirAgendamento() {
@@ -690,6 +692,7 @@ async function excluirAgendamento() {
   closeModal('modalAgendamento');
   calendar.refetchEvents();
   loadDashboard();
+  loadFinanceiro();
 }
 
 function enviarLembrete(agendamento) {
@@ -799,7 +802,8 @@ async function loadFinanceiro() {
       <td class="px-4 py-3"><span class="text-xs px-2 py-1 rounded-full ${f.Tipo === 'Entrada' ? 'badge-entrada' : 'badge-saida'}">${f.Tipo === 'Entrada' ? 'Entrada' : 'Saída'}</span></td>
       <td class="px-4 py-3"><span class="text-xs px-2 py-1 rounded-full ${f.StatusPagamento === 'Pago' ? 'badge-pago' : 'badge-pendente'}">${f.FormaPagamento} · ${f.StatusPagamento}</span></td>
       <td class="px-4 py-3 text-right">${formatMoeda(f.Valor)}</td>
-      <td class="px-4 py-3 text-right">
+      <td class="px-4 py-3 text-right whitespace-nowrap">
+        ${f.StatusPagamento === 'Pendente' ? `<button class="text-[var(--rose-dark)] hover:underline text-xs mr-3" onclick="marcarComoPago('${f.ID}')">Marcar como pago</button>` : ''}
         <button class="text-red-500 hover:underline text-xs" onclick="excluirFinanceiro('${f.ID}')">Excluir</button>
       </td>
     </tr>`).join('') || '<tr><td colspan="6" class="px-4 py-6 text-center text-[#8a7f7c]">Nenhum lançamento neste mês.</td></tr>';
@@ -821,6 +825,14 @@ async function salvarFinanceiro(e) {
   showToast('Lançamento registrado.');
   closeModal('modalFinanceiro');
   document.getElementById('formFinanceiro').reset();
+  loadFinanceiro();
+  loadDashboard();
+}
+
+async function marcarComoPago(id) {
+  const resp = await apiPost('updateFinanceiro', { data: { ID: id, StatusPagamento: 'Pago' } });
+  if (resp.error) return showToast(resp.message, 'erro');
+  showToast('Lançamento marcado como pago.');
   loadFinanceiro();
   loadDashboard();
 }
