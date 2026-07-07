@@ -186,6 +186,7 @@
         <button data-section="dashboard" class="nav-item active px-6 py-3 text-left flex items-center gap-3">Dashboard</button>
         <button data-section="agenda" class="nav-item px-6 py-3 text-left flex items-center gap-3">Agenda</button>
         <button data-section="clientes" class="nav-item px-6 py-3 text-left flex items-center gap-3">Clientes</button>
+        <button data-section="servicos" class="nav-item px-6 py-3 text-left flex items-center gap-3">Serviços</button>
         <button data-section="financeiro" class="nav-item px-6 py-3 text-left flex items-center gap-3">Financeiro</button>
       </nav>
     </div>
@@ -211,14 +212,14 @@
       </div>
       <div class="grad-line w-16 mb-6"></div>
 
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div class="card p-5">
           <p class="text-xs uppercase tracking-wider text-[#8a7f7c]">Receita mensal</p>
           <p id="mReceita" class="font-display text-3xl mt-1 text-[var(--graphite)]">R$ 0,00</p>
         </div>
         <div class="card p-5">
-          <p class="text-xs uppercase tracking-wider text-[#8a7f7c]">Ticket médio</p>
-          <p id="mTicket" class="font-display text-3xl mt-1">R$ 0,00</p>
+          <p class="text-xs uppercase tracking-wider text-[#8a7f7c]">Atendimentos no mês</p>
+          <p id="mAtendimentos" class="font-display text-3xl mt-1">0</p>
         </div>
         <div class="card p-5">
           <p class="text-xs uppercase tracking-wider text-[#8a7f7c]">Taxa de ocupação</p>
@@ -227,6 +228,21 @@
         <div class="card p-5">
           <p class="text-xs uppercase tracking-wider text-[#8a7f7c]">Saldo do mês</p>
           <p id="mSaldo" class="font-display text-3xl mt-1">R$ 0,00</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div class="card p-5">
+          <p class="text-xs uppercase tracking-wider text-[#8a7f7c]">Horas trabalhadas · semana</p>
+          <p id="mHorasSemana" class="font-display text-3xl mt-1">0h00</p>
+          <p id="mHorasMedia" class="text-xs text-[#8a7f7c] mt-1">Média diária: 0h00 · 0 atendimentos</p>
+        </div>
+        <div class="card p-5">
+          <div class="flex items-center justify-between">
+            <p class="text-xs uppercase tracking-wider text-[#8a7f7c]">Produtividade por período</p>
+            <span id="prodTopo" class="text-xs text-[var(--rose-dark)] font-semibold"></span>
+          </div>
+          <div id="prodPorSemana" class="mt-3 space-y-2 text-sm"></div>
         </div>
       </div>
 
@@ -267,6 +283,29 @@
             </tr>
           </thead>
           <tbody id="clientesTbody" class="divide-y divide-[#f2ebe8]"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===== SERVIÇOS ===== -->
+    <section id="section-servicos" class="p-8 hidden">
+      <div class="flex items-end justify-between mb-1">
+        <h2 class="font-display text-3xl">Serviços</h2>
+        <button id="novoServicoBtn" class="btn-primary px-4 py-2 rounded-lg text-sm">+ Novo serviço</button>
+      </div>
+      <div class="grad-line w-16 mb-6"></div>
+      <p class="text-sm text-[#8a7f7c] mb-4">Gerencie os serviços oferecidos. As alterações refletem automaticamente no agendamento.</p>
+      <div class="card overflow-hidden table-scroll">
+        <table class="w-full text-sm">
+          <thead class="bg-[#f8f3f1] text-[#8a7f7c] uppercase text-xs">
+            <tr>
+              <th class="text-left px-4 py-3">Serviço</th>
+              <th class="text-left px-4 py-3">Duração</th>
+              <th class="text-right px-4 py-3">Valor</th>
+              <th class="text-right px-4 py-3">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="servicosTbody" class="divide-y divide-[#f2ebe8]"></tbody>
         </table>
       </div>
     </section>
@@ -405,6 +444,37 @@
   </div>
 </div>
 
+<!-- ============== MODAL: SERVIÇO ============== -->
+<div id="modalServico" class="fixed inset-0 modal-backdrop hidden items-center justify-center z-50 p-4">
+  <div class="card w-full max-w-md p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="font-display text-2xl" id="modalServicoTitulo">Novo serviço</h3>
+      <button class="modal-close text-2xl text-[#8a7f7c]" data-modal="modalServico">&times;</button>
+    </div>
+    <form id="formServico" class="space-y-3">
+      <input type="hidden" id="srvId">
+      <div>
+        <label class="text-xs uppercase text-[#8a7f7c]">Nome</label>
+        <input id="srvNome" required class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1" placeholder="Ex: Manicure">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs uppercase text-[#8a7f7c]">Duração (min)</label>
+          <input id="srvDuracao" type="number" min="0" step="5" class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1" placeholder="60">
+        </div>
+        <div>
+          <label class="text-xs uppercase text-[#8a7f7c]">Valor (R$)</label>
+          <input id="srvPreco" type="number" min="0" step="0.01" class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1" placeholder="0,00">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" id="srvDeleteBtn" class="hidden px-4 py-2 rounded-lg text-sm text-red-500 border border-red-200 hover:bg-red-50">Excluir</button>
+        <button type="submit" class="btn-primary px-5 py-2 rounded-lg text-sm">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- ============== MODAL: FINANCEIRO ============== -->
 <div id="modalFinanceiro" class="fixed inset-0 modal-backdrop hidden items-center justify-center z-50 p-4">
   <div class="card w-full max-w-md p-6">
@@ -477,6 +547,25 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbzVSlqQe92ejAaAuUBQKFPk
 const TOKEN_KEY = 'rosenails_token';
 
 /* ================= HELPERS DE API ================= */
+let sessaoExpirada = false;
+
+/**
+ * Detecta sessão expirada/ inválida de forma centralizada. O backend marca
+ * essas respostas com authError:true. Ao detectar, limpa o token e volta para
+ * a tela de login — antes o frontend não detectava isso e as telas ficavam
+ * vazias após o F5 (o token expira e toda chamada passava a falhar em silêncio).
+ */
+function handleAuthResponse(json) {
+  if (json && json.authError) {
+    if (!sessaoExpirada) {
+      sessaoExpirada = true;
+      localStorage.removeItem(TOKEN_KEY);
+      forcarLogin('Sua sessão expirou. Faça login novamente.');
+    }
+  }
+  return json;
+}
+
 async function apiGet(action, params = {}) {
   const url = new URL(API_URL);
   url.searchParams.set('action', action);
@@ -484,7 +573,7 @@ async function apiGet(action, params = {}) {
   if (token) url.searchParams.set('token', token);
   Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null) url.searchParams.set(k, v); });
   const res = await fetch(url.toString());
-  return res.json();
+  return handleAuthResponse(await res.json());
 }
 
 async function apiPost(action, data = {}) {
@@ -494,7 +583,21 @@ async function apiPost(action, data = {}) {
     headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight CORS no Apps Script
     body: JSON.stringify({ action, token, ...data })
   });
-  return res.json();
+  return handleAuthResponse(await res.json());
+}
+
+/** Volta para a tela de login exibindo uma mensagem (usado quando a sessão expira). */
+function forcarLogin(mensagem) {
+  const app = document.getElementById('app');
+  app.classList.add('hidden');
+  app.classList.remove('flex');
+  const login = document.getElementById('loginScreen');
+  login.classList.remove('hidden');
+  if (mensagem) {
+    const errorEl = document.getElementById('loginError');
+    errorEl.textContent = mensagem;
+    errorEl.classList.remove('hidden');
+  }
 }
 
 /* ================= TOAST ================= */
@@ -527,6 +630,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
       errorEl.classList.remove('hidden');
     } else {
       localStorage.setItem(TOKEN_KEY, resp.token);
+      sessaoExpirada = false;
       startApp();
     }
   } catch (err) {
@@ -596,12 +700,15 @@ function initApp() {
   document.getElementById('novoAgendamentoBtn').addEventListener('click', () => openModalAgendamento());
   document.getElementById('novoClienteBtn').addEventListener('click', () => openModalCliente());
   document.getElementById('novoFinBtn').addEventListener('click', () => openModal('modalFinanceiro'));
+  document.getElementById('novoServicoBtn').addEventListener('click', () => openModalServico());
 
   document.getElementById('formAgendamento').addEventListener('submit', salvarAgendamento);
   document.getElementById('formCliente').addEventListener('submit', salvarCliente);
   document.getElementById('formFinanceiro').addEventListener('submit', salvarFinanceiro);
+  document.getElementById('formServico').addEventListener('submit', salvarServico);
   document.getElementById('agDeleteBtn').addEventListener('click', excluirAgendamento);
   document.getElementById('cliDeleteBtn').addEventListener('click', excluirCliente);
+  document.getElementById('srvDeleteBtn').addEventListener('click', excluirServico);
   document.getElementById('buscaCliente').addEventListener('input', filtrarClientes);
 
   document.getElementById('agServico').addEventListener('change', aplicarDuracaoServico);
@@ -622,12 +729,15 @@ function closeModal(id) {
 async function loadDashboard() {
   const mes = document.getElementById('dashMonth').value;
   const resp = await apiGet('getDashboard', { mes });
-  if (resp.error) return showToast(resp.message, 'erro');
+  if (resp.error) { if (!resp.authError) showToast(resp.message, 'erro'); return; }
   const d = resp.data;
   document.getElementById('mReceita').textContent = formatMoeda(d.receitaMensal);
-  document.getElementById('mTicket').textContent = formatMoeda(d.ticketMedio);
+  document.getElementById('mAtendimentos').textContent = d.atendimentosMes ?? 0;
   document.getElementById('mOcupacao').textContent = d.taxaOcupacao + '%';
   document.getElementById('mSaldo').textContent = formatMoeda(d.saldoMensal);
+
+  renderProdutividade(d.produtividadePorSemana || []);
+  loadHorasSemana();
 
   const hojeISO = new Date().toISOString().slice(0, 10);
   const ag = await apiGet('getAgendamentos', { dataInicio: hojeISO, dataFim: hojeISO });
@@ -647,6 +757,73 @@ async function loadDashboard() {
 
 function formatMoeda(v) {
   return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+}
+
+/** Formata minutos como "XhYY" (ex.: 90 -> "1h30"). */
+function formatHoras(minutos) {
+  const m = Math.max(0, Math.round(Number(minutos) || 0));
+  const h = Math.floor(m / 60);
+  const min = m % 60;
+  return h + 'h' + String(min).padStart(2, '0');
+}
+
+/** Renderiza as barras de produtividade por período do mês e destaca o pico. */
+function renderProdutividade(semanas) {
+  const cont = document.getElementById('prodPorSemana');
+  const topoEl = document.getElementById('prodTopo');
+  if (!cont) return;
+  const max = Math.max(1, ...semanas.map(s => s.qtd));
+  const total = semanas.reduce((s, x) => s + x.qtd, 0);
+  const pico = semanas.reduce((a, b) => (b.qtd > a.qtd ? b : a), { qtd: -1, label: '' });
+  topoEl.textContent = total > 0 && pico.qtd > 0 ? 'Pico: ' + pico.label : '';
+  cont.innerHTML = semanas.map(s => {
+    const pct = Math.round((s.qtd / max) * 100);
+    const destaque = s.qtd === pico.qtd && s.qtd > 0;
+    return `<div>
+      <div class="flex justify-between text-xs mb-1">
+        <span class="${destaque ? 'text-[var(--rose-dark)] font-semibold' : 'text-[#8a7f7c]'}">${s.label}</span>
+        <span class="${destaque ? 'text-[var(--rose-dark)] font-semibold' : 'text-[#8a7f7c]'}">${s.qtd}</span>
+      </div>
+      <div class="w-full h-2 rounded-full bg-[#f2ebe8] overflow-hidden">
+        <div class="h-full rounded-full" style="width:${pct}%;background:${destaque ? 'var(--rose-dark)' : 'var(--rose-light)'}"></div>
+      </div>
+    </div>`;
+  }).join('') || '<p class="text-[#8a7f7c] text-sm">Sem atendimentos no mês.</p>';
+}
+
+/** Retorna o intervalo ISO [segunda, domingo] da semana atual. */
+function intervaloSemanaAtual() {
+  const hoje = new Date();
+  const diaSemana = (hoje.getDay() + 6) % 7; // 0 = segunda
+  const inicio = new Date(hoje); inicio.setDate(hoje.getDate() - diaSemana);
+  const fim = new Date(inicio); fim.setDate(inicio.getDate() + 6);
+  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return { inicio: iso(inicio), fim: iso(fim) };
+}
+
+/**
+ * Calcula horas trabalhadas na semana atual a partir dos agendamentos
+ * (soma da duração de cada atendimento não cancelado) e a média por dia
+ * que teve atendimento.
+ */
+async function loadHorasSemana() {
+  const { inicio, fim } = intervaloSemanaAtual();
+  const resp = await apiGet('getAgendamentos', { dataInicio: inicio, dataFim: fim });
+  if (resp.error) return;
+  const ativos = (resp.data || []).filter(a => a.Status !== 'Cancelado');
+  let totalMin = 0;
+  const diasComAtendimento = new Set();
+  ativos.forEach(a => {
+    const [h1, m1] = String(a.HoraInicio).split(':').map(Number);
+    const [h2, m2] = String(a.HoraFim).split(':').map(Number);
+    const dur = (h2 * 60 + m2) - (h1 * 60 + m1);
+    if (dur > 0) { totalMin += dur; diasComAtendimento.add(a.Data); }
+  });
+  const nDias = diasComAtendimento.size || 0;
+  const mediaMin = nDias > 0 ? totalMin / nDias : 0;
+  document.getElementById('mHorasSemana').textContent = formatHoras(totalMin);
+  document.getElementById('mHorasMedia').textContent =
+    `Média diária: ${formatHoras(mediaMin)} · ${ativos.length} atendimento${ativos.length === 1 ? '' : 's'}`;
 }
 
 /* ================= AGENDA / CALENDÁRIO ================= */
@@ -695,9 +872,67 @@ async function fetchEventosCalendario(info, successCallback) {
 
 async function loadServicos() {
   const resp = await apiGet('getServicos');
+  if (resp.error) return;
   servicosCache = resp.data || [];
   const sel = document.getElementById('agServico');
   sel.innerHTML = servicosCache.map(s => `<option value="${s.Nome}" data-duracao="${s.DuracaoMinutos}" data-preco="${s.Preco}">${s.Nome}</option>`).join('');
+  renderServicos();
+}
+
+function renderServicos() {
+  const tbody = document.getElementById('servicosTbody');
+  if (!tbody) return;
+  tbody.innerHTML = servicosCache.map(s => `
+    <tr>
+      <td class="px-4 py-3">${s.Nome}</td>
+      <td class="px-4 py-3">${Number(s.DuracaoMinutos) || 0} min</td>
+      <td class="px-4 py-3 text-right">${formatMoeda(s.Preco)}</td>
+      <td class="px-4 py-3 text-right">
+        <button class="text-[var(--rose-dark)] hover:underline text-xs" onclick='openModalServico(${JSON.stringify(s).replace(/'/g, "&apos;")})'>Editar</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="4" class="px-4 py-6 text-center text-[#8a7f7c]">Nenhum serviço cadastrado.</td></tr>';
+}
+
+function openModalServico(servico = null) {
+  const form = document.getElementById('formServico');
+  form.reset();
+  document.getElementById('srvDeleteBtn').classList.toggle('hidden', !servico);
+  if (servico) {
+    document.getElementById('modalServicoTitulo').textContent = 'Editar serviço';
+    document.getElementById('srvId').value = servico.ID;
+    document.getElementById('srvNome').value = servico.Nome;
+    document.getElementById('srvDuracao').value = servico.DuracaoMinutos;
+    document.getElementById('srvPreco').value = servico.Preco;
+  } else {
+    document.getElementById('modalServicoTitulo').textContent = 'Novo serviço';
+    document.getElementById('srvId').value = '';
+  }
+  openModal('modalServico');
+}
+
+async function salvarServico(e) {
+  e.preventDefault();
+  const data = {
+    ID: document.getElementById('srvId').value || undefined,
+    Nome: document.getElementById('srvNome').value,
+    DuracaoMinutos: document.getElementById('srvDuracao').value || 60,
+    Preco: document.getElementById('srvPreco').value || 0
+  };
+  const resp = data.ID ? await apiPost('updateServico', { data }) : await apiPost('addServico', { data });
+  if (resp.error) return showToast(resp.message, 'erro');
+  showToast('Serviço salvo com sucesso.');
+  closeModal('modalServico');
+  loadServicos(); // atualiza tabela e o <select> do agendamento
+}
+
+async function excluirServico() {
+  const id = document.getElementById('srvId').value;
+  if (!id || !confirm('Excluir este serviço?')) return;
+  const resp = await apiPost('deleteServico', { id });
+  if (resp.error) return showToast(resp.message, 'erro');
+  showToast('Serviço excluído.');
+  closeModal('modalServico');
+  loadServicos();
 }
 
 function aplicarDuracaoServico() {
@@ -785,6 +1020,10 @@ async function excluirAgendamento() {
   if (resp.error) return showToast(resp.message, 'erro');
   showToast('Agendamento excluído.');
   closeModal('modalAgendamento');
+  // Remove o evento já renderizado imediatamente (antes dependia só do
+  // refetchEvents, e o evento continuava visível no calendário após excluir).
+  const ev = calendar.getEventById(id);
+  if (ev) ev.remove();
   calendar.refetchEvents();
   loadDashboard();
   loadFinanceiro();
@@ -880,7 +1119,7 @@ async function excluirCliente() {
 async function loadFinanceiro() {
   const mes = document.getElementById('finMonth').value;
   const resp = await apiGet('getFinanceiro', { mes });
-  if (resp.error) return showToast(resp.message, 'erro');
+  if (resp.error) { if (!resp.authError) showToast(resp.message, 'erro'); return; }
   const lista = resp.data || [];
 
   const entradas = lista.filter(f => f.Tipo === 'Entrada').reduce((s, f) => s + Number(f.Valor), 0);
