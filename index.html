@@ -542,7 +542,7 @@
 /* =========================================================
    CONFIGURAÇÃO — troque pela URL do seu Web App implantado
    ========================================================= */
-const API_URL = 'https://script.google.com/macros/s/AKfycbxR1NEXQ0xhJxCBS2mn-kUEohYj_nF-XtqyyroPFmOVomugKLvDsdCW0IGngcGSZIh5/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycby1dMqwddKljkZswKqR6FgIRb_ohJoegzSAMTbi-1ZoZeOvaqeBVXnH8LEY7PMdyo6L/exec';
 
 const TOKEN_KEY = 'rosenails_token';
 
@@ -554,8 +554,16 @@ let sessaoExpirada = false;
  * essas respostas com authError:true. Ao detectar, limpa o token e volta para
  * a tela de login — antes o frontend não detectava isso e as telas ficavam
  * vazias após o F5 (o token expira e toda chamada passava a falhar em silêncio).
+ *
+ * NOVO: o backend agora devolve `renewedToken` em toda resposta autenticada
+ * com sucesso — é uma sessão "deslizante": cada chamada renova a validade do
+ * token. Assim, enquanto o site estiver sendo usado normalmente, a sessão
+ * nunca chega a expirar no meio do trabalho, e o F5 deixa de zerar os dados.
  */
 function handleAuthResponse(json) {
+  if (json && json.renewedToken) {
+    localStorage.setItem(TOKEN_KEY, json.renewedToken);
+  }
   if (json && json.authError) {
     if (!sessaoExpirada) {
       sessaoExpirada = true;
