@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Rose Nails · Gestão</title>
+
+<!-- Tailwind CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Google Fonts: display serif elegante + sans utilitária -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- FullCalendar (bundle global) -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+
+<style>
+  :root{
+    --rose:#B76E79;
+    --rose-light:#E3B7AE;
+    --rose-dark:#8C4F58;
+    --graphite:#232323;
+    --graphite-soft:#3B3B3B;
+    --cream:#FBF7F5;
+    --line: linear-gradient(90deg, var(--rose), var(--rose-light));
+  }
+  html,body{ font-family:'Manrope', sans-serif; background:var(--cream); }
+  .font-display{ font-family:'Cormorant Garamond', serif; }
+  .grad-line{ height:2px; background:var(--line); border-radius:2px; }
+  .rose-scroll::-webkit-scrollbar{ width:6px; }
+  .rose-scroll::-webkit-scrollbar-thumb{ background:var(--rose-light); border-radius:4px; }
+
+  .btn-primary{
+    background:var(--graphite); color:#fff; font-weight:600; letter-spacing:.02em;
+    transition:all .2s ease; border:1px solid var(--graphite);
+  }
+  .btn-primary:hover{ background:var(--rose-dark); border-color:var(--rose-dark); }
+  .btn-ghost{
+    background:transparent; color:var(--graphite); border:1px solid #d8d0cd; font-weight:600;
+    transition:all .2s ease;
+  }
+  .btn-ghost:hover{ border-color:var(--rose); color:var(--rose-dark); }
+
+  .nav-item{ color:#cfc4c0; transition:all .18s ease; border-left:2px solid transparent; }
+  .nav-item:hover{ color:#fff; background:rgba(255,255,255,0.04); }
+  .nav-item.active{ color:#fff; border-left-color:var(--rose); background:rgba(255,255,255,0.06); }
+
+  .card{ background:#fff; border:1px solid #efe6e3; border-radius:14px; }
+  .badge-pago{ background:#EFE3DE; color:var(--rose-dark); }
+  .badge-pendente{ background:#F3F0EA; color:#8a7a3f; border:1px solid #d9cf9a; }
+  .badge-entrada{ background:#e8f0e6; color:#4f7a4a; }
+  .badge-saida{ background:#f5e6e6; color:#a14d4d; }
+
+  input, select, textarea{ outline:none; }
+  input:focus, select:focus, textarea:focus{ border-color:var(--rose) !important; box-shadow:0 0 0 3px rgba(183,110,121,.12); }
+
+  .fc{ --fc-border-color:#f0e7e4; --fc-today-bg-color:#fbf1ef; --fc-page-bg-color:transparent; font-family:'Manrope',sans-serif; }
+  .fc .fc-toolbar-title{ font-family:'Cormorant Garamond', serif; color:var(--graphite); font-weight:600; }
+  .fc .fc-button{ background:var(--graphite) !important; border:none !important; text-transform:capitalize; }
+  .fc .fc-button:hover{ background:var(--rose-dark) !important; }
+  .fc .fc-button-active{ background:var(--rose-dark) !important; }
+  .fc-event{ border:none !important; background:var(--rose) !important; cursor:pointer; }
+  .fc-event.status-cancelado{ background:#b8b0ad !important; text-decoration:line-through; }
+  .fc-event.status-concluido{ background:var(--graphite) !important; }
+
+  .modal-backdrop{ background:rgba(35,33,33,.55); backdrop-filter: blur(2px); }
+
+  .rose-mark path{ stroke:var(--rose); }
+
+  @keyframes toast-in{ from{ transform:translateY(12px); opacity:0;} to{ transform:translateY(0); opacity:1;} }
+  .toast{ animation:toast-in .25s ease; }
+
+  /* ================= RESPONSIVO / MOBILE ================= */
+
+  /* Overlay escuro atrás do menu lateral quando aberto no mobile */
+  #sidebarOverlay{ background:rgba(0,0,0,.4); }
+
+  @media (max-width: 767px){
+    /* Sidebar vira um menu "gaveta" que desliza por cima do conteúdo */
+    aside{
+      position:fixed; inset:0 auto 0 0; z-index:50;
+      transform:translateX(-100%);
+      transition:transform .25s ease;
+      width:78vw; max-width:280px;
+    }
+    aside.sidebar-open{ transform:translateX(0); }
+
+    /* Reduz respiro geral das seções no celular */
+    main section{ padding:1rem !important; }
+
+    /* Cards do dashboard: 2 colunas em vez de 4 */
+    #section-dashboard .grid-cols-1.md\:grid-cols-4{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:.75rem; }
+    #section-dashboard .card p.font-display{ font-size:1.4rem; }
+
+    /* Financeiro: cards de resumo em 1 coluna */
+    #section-financeiro .grid-cols-3{ grid-template-columns:repeat(1,minmax(0,1fr)); max-width:100%; }
+
+    /* Cabeçalhos de seção empilham em vez de ficar lado a lado */
+    main section > .flex.items-end.justify-between{
+      flex-direction:column; align-items:flex-start; gap:.6rem;
+    }
+    main section > .flex.items-end.justify-between > *{ width:100%; }
+    main section > .flex.items-end.justify-between button{ width:100%; }
+    #section-financeiro .flex.gap-2{ width:100%; }
+    #section-financeiro .flex.gap-2 input,
+    #section-financeiro .flex.gap-2 button{ flex:1 1 0; width:auto; }
+
+    /* Tabelas: permitem rolagem horizontal em vez de espremer colunas */
+    .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .table-scroll table{ min-width:640px; }
+
+    /* Modais: menos padding e ocupam quase a tela toda */
+    .card.max-w-lg, .card.max-w-md{ padding:1.1rem; max-width:100%; }
+
+    /* Formulários dentro dos modais: grids viram 1 coluna */
+    #formAgendamento .grid-cols-3,
+    #formAgendamento .grid-cols-2,
+    #formCliente .grid-cols-2,
+    #formFinanceiro .grid-cols-2{
+      grid-template-columns:repeat(1,minmax(0,1fr)); gap:.6rem;
+    }
+
+    /* Calendário: reduz altura e permite toolbar quebrar linha */
+    .fc .fc-toolbar{ flex-direction:column; gap:.5rem; align-items:stretch; }
+    .fc .fc-toolbar-chunk{ display:flex; justify-content:center; }
+    #section-agenda .card.p-4{ padding:.6rem; }
+  }
+
+  /* Botão hamburguer só aparece no mobile */
+  #menuToggle{ display:none; }
+  @media (max-width: 767px){
+    #menuToggle{ display:inline-flex; }
+  }
+</style>
+</head>
+<body class="text-[#2a2a2a]">
+
+<!-- ============== TELA DE LOGIN ============== -->
+<div id="loginScreen" class="min-h-screen flex items-center justify-center px-4"
+     style="background:radial-gradient(circle at 30% 20%, #2c2a2a, var(--graphite) 60%);">
+  <div class="w-full max-w-sm">
+    <div class="flex flex-col items-center mb-8">
+      <svg class="rose-mark" width="44" height="54" viewBox="0 0 44 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22 6c4 3 7 7 7 11s-3 7-7 7-7-3-7-7 3-8 7-11Z" stroke-width="1.4" stroke="#B76E79"/>
+        <path d="M22 24c0 10-2 18-10 24" stroke-width="1.4" stroke="#B76E79"/>
+      </svg>
+      <h1 class="font-display text-white text-4xl tracking-wide mt-2">Rose Nails</h1>
+      <p class="text-[#cfc4c0] text-xs uppercase tracking-[0.25em] mt-1">Salão de Beleza · Zona Norte</p>
+    </div>
+
+    <form id="loginForm" class="card p-7" style="background:#2f2c2c; border-color:#413d3d;">
+      <label class="block text-[#cfc4c0] text-xs uppercase tracking-wider mb-1.5">Usuário</label>
+      <input id="loginUser" required type="text" autocomplete="username"
+             class="w-full mb-4 px-3 py-2.5 rounded-lg bg-[#232323] text-white border border-[#4a4646] placeholder-[#7a7575]" placeholder="seu usuário">
+
+      <label class="block text-[#cfc4c0] text-xs uppercase tracking-wider mb-1.5">Senha</label>
+      <input id="loginPass" required type="password" autocomplete="current-password"
+             class="w-full mb-2 px-3 py-2.5 rounded-lg bg-[#232323] text-white border border-[#4a4646] placeholder-[#7a7575]" placeholder="••••••••">
+
+      <p id="loginError" class="text-rose-300 text-sm mt-2 hidden"></p>
+
+      <button type="submit" id="loginBtn" class="btn-primary w-full mt-5 py-2.5 rounded-lg">Entrar</button>
+    </form>
+    <p class="text-center text-[#7a7575] text-xs mt-6">Acesso restrito · Rose Nails © 2026</p>
+  </div>
+</div>
+
+<!-- ============== APP PRINCIPAL ============== -->
+<div id="app" class="hidden min-h-screen flex">
+
+  <!-- Overlay para fechar o menu no mobile -->
+  <div id="sidebarOverlay" class="fixed inset-0 z-40 hidden"></div>
+
+  <!-- Sidebar -->
+  <aside class="w-60 shrink-0 flex flex-col justify-between" style="background:var(--graphite);">
+    <div>
+      <div class="px-6 py-7 flex items-center gap-2">
+        <svg width="22" height="27" viewBox="0 0 44 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22 6c4 3 7 7 7 11s-3 7-7 7-7-3-7-7 3-8 7-11Z" stroke-width="1.6" stroke="#B76E79"/>
+          <path d="M22 24c0 10-2 18-10 24" stroke-width="1.6" stroke="#B76E79"/>
+        </svg>
+        <span class="font-display text-white text-2xl">Rose Nails</span>
+      </div>
+      <nav class="mt-4 flex flex-col text-sm">
+        <button data-section="dashboard" class="nav-item active px-6 py-3 text-left flex items-center gap-3">Dashboard</button>
+        <button data-section="agenda" class="nav-item px-6 py-3 text-left flex items-center gap-3">Agenda</button>
+        <button data-section="clientes" class="nav-item px-6 py-3 text-left flex items-center gap-3">Clientes</button>
+        <button data-section="servicos" class="nav-item px-6 py-3 text-left flex items-center gap-3">Serviços</button>
+        <button data-section="financeiro" class="nav-item px-6 py-3 text-left flex items-center gap-3">Financeiro</button>
+      </nav>
+    </div>
+    <button id="logoutBtn" class="text-[#cfc4c0] text-sm px-6 py-5 text-left hover:text-white border-t border-[#3a3636]">Sair</button>
+  </aside>
+
+  <!-- Conteúdo -->
+  <main class="flex-1 min-h-screen overflow-y-auto rose-scroll">
+
+    <!-- Barra superior mobile com botão hamburguer -->
+    <div class="md:hidden flex items-center gap-3 px-4 py-3 border-b border-[#efe6e3] bg-white sticky top-0 z-30">
+      <button id="menuToggle" class="w-9 h-9 items-center justify-center rounded-lg border border-[#e0d6d3]">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <span class="font-display text-lg">Rose Nails</span>
+    </div>
+
+    <!-- ===== DASHBOARD ===== -->
+    <section id="section-dashboard" class="p-8">
+      <div class="flex items-end justify-between mb-1">
+        <h2 class="font-display text-3xl">Principal</h2>
+        <input id="dashMonth" type="month" class="border border-[#e0d6d3] rounded-lg px-3 py-1.5 text-sm">
+      </div>
+      <div class="grad-line w-16 mb-6"></div>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="card p-5">
+          <p class="text-xs uppercase tracking-wider text-[#8a7f7c]">Receita mensal</p>
+          <p id="mReceita" class="font-display text-3xl mt-1 text-[var(--graphite)]">R$ 0,00</p>
+        </div>
+        <div class="card p-5">
+          <p class="text-xs uppercase tracking-wider text-[#8a7f7c]">Atendimentos no mês</p>
+          <p id="mAtendimentos" class="font-display text-3xl mt-1">0</p>
+        </div>
+        <div class="card p-5">
+          <p class="text-xs uppercase tracking-wider text-[#8a7f7c]">Taxa de ocupação</p>
+          <p id="mOcupacao" class="font-display text-3xl mt-1">0%</p>
+        </div>
+        <div class="card p-5">
+          <p class="text-xs uppercase tracking-wider text-[#8a7f7c]">Saldo do mês</p>
+          <p id="mSaldo" class="font-display text-3xl mt-1">R$ 0,00</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div class="card p-5">
+          <p class="text-xs uppercase tracking-wider text-[#8a7f7c]">Horas trabalhadas · semana</p>
+          <p id="mHorasSemana" class="font-display text-3xl mt-1">0h00</p>
+          <p id="mHorasMedia" class="text-xs text-[#8a7f7c] mt-1">Média diária: 0h00 · 0 atendimentos</p>
+        </div>
+        <div class="card p-5">
+          <div class="flex items-center justify-between">
+            <p class="text-xs uppercase tracking-wider text-[#8a7f7c]">Produtividade por período</p>
+            <span id="prodTopo" class="text-xs text-[var(--rose-dark)] font-semibold"></span>
+          </div>
+          <div id="prodPorSemana" class="mt-3 space-y-2 text-sm"></div>
+        </div>
+      </div>
+
+      <div class="card p-6">
+        <h3 class="font-display text-xl mb-3">Agendamentos de hoje</h3>
+        <div id="hojeLista" class="divide-y divide-[#f2ebe8] text-sm"></div>
+      </div>
+    </section>
+
+    <!-- ===== AGENDA ===== -->
+    <section id="section-agenda" class="p-8 hidden">
+      <div class="flex items-end justify-between mb-1">
+        <h2 class="font-display text-3xl">Agenda</h2>
+        <button id="novoAgendamentoBtn" class="btn-primary px-4 py-2 rounded-lg text-sm">+ Novo agendamento</button>
+      </div>
+      <div class="grad-line w-16 mb-6"></div>
+      <div class="card p-4">
+        <div id="calendar"></div>
+      </div>
+    </section>
+
+    <!-- ===== CLIENTES ===== -->
+    <section id="section-clientes" class="p-8 hidden">
+      <div class="flex items-end justify-between mb-1">
+        <h2 class="font-display text-3xl">Clientes</h2>
+        <button id="novoClienteBtn" class="btn-primary px-4 py-2 rounded-lg text-sm">+ Novo cliente</button>
+      </div>
+      <div class="grad-line w-16 mb-6"></div>
+      <input id="buscaCliente" placeholder="Buscar por nome ou telefone…" class="w-full max-w-sm mb-4 border border-[#e0d6d3] rounded-lg px-3 py-2 text-sm">
+      <div class="card overflow-hidden table-scroll">
+        <table class="w-full text-sm">
+          <thead class="bg-[#f8f3f1] text-[#8a7f7c] uppercase text-xs">
+            <tr>
+              <th class="text-left px-4 py-3">Nome</th>
+              <th class="text-left px-4 py-3">Telefone</th>
+              <th class="text-left px-4 py-3">Cadastro</th>
+              <th class="text-right px-4 py-3">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="clientesTbody" class="divide-y divide-[#f2ebe8]"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===== SERVIÇOS ===== -->
+    <section id="section-servicos" class="p-8 hidden">
+      <div class="flex items-end justify-between mb-1">
+        <h2 class="font-display text-3xl">Serviços</h2>
+        <button id="novoServicoBtn" class="btn-primary px-4 py-2 rounded-lg text-sm">+ Novo serviço</button>
+      </div>
+      <div class="grad-line w-16 mb-6"></div>
+      <p class="text-sm text-[#8a7f7c] mb-4">Gerencie os serviços oferecidos. As alterações refletem automaticamente no agendamento.</p>
+      <div class="card overflow-hidden table-scroll">
+        <table class="w-full text-sm">
+          <thead class="bg-[#f8f3f1] text-[#8a7f7c] uppercase text-xs">
+            <tr>
+              <th class="text-left px-4 py-3">Serviço</th>
+              <th class="text-left px-4 py-3">Duração</th>
+              <th class="text-right px-4 py-3">Valor</th>
+              <th class="text-right px-4 py-3">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="servicosTbody" class="divide-y divide-[#f2ebe8]"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===== FINANCEIRO ===== -->
+    <section id="section-financeiro" class="p-8 hidden">
+      <div class="flex items-end justify-between mb-1">
+        <h2 class="font-display text-3xl">Financeiro</h2>
+        <div class="flex gap-2">
+          <input id="finMonth" type="month" class="border border-[#e0d6d3] rounded-lg px-3 py-1.5 text-sm">
+          <button id="novoFinBtn" class="btn-primary px-4 py-2 rounded-lg text-sm">+ Lançamento</button>
+        </div>
+      </div>
+      <div class="grad-line w-16 mb-6"></div>
+
+      <div class="grid grid-cols-3 gap-4 mb-6 max-w-xl">
+        <div class="card p-4"><p class="text-xs text-[#8a7f7c] uppercase">Entradas</p><p id="finEntradas" class="font-display text-2xl">R$ 0,00</p></div>
+        <div class="card p-4"><p class="text-xs text-[#8a7f7c] uppercase">Saídas</p><p id="finSaidas" class="font-display text-2xl">R$ 0,00</p></div>
+        <div class="card p-4"><p class="text-xs text-[#8a7f7c] uppercase">Saldo</p><p id="finSaldo" class="font-display text-2xl">R$ 0,00</p></div>
+      </div>
+
+      <div class="card overflow-hidden table-scroll">
+        <table class="w-full text-sm">
+          <thead class="bg-[#f8f3f1] text-[#8a7f7c] uppercase text-xs">
+            <tr>
+              <th class="text-left px-4 py-3">Data</th>
+              <th class="text-left px-4 py-3">Descrição</th>
+              <th class="text-left px-4 py-3">Tipo</th>
+              <th class="text-left px-4 py-3">Pagamento</th>
+              <th class="text-right px-4 py-3">Valor</th>
+              <th class="text-right px-4 py-3">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="financeiroTbody" class="divide-y divide-[#f2ebe8]"></tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ============== MODAL: AGENDAMENTO ============== -->
+<div id="modalAgendamento" class="fixed inset-0 modal-backdrop hidden items-center justify-center z-50 p-4">
+  <div class="card w-full max-w-lg p-6 max-h-[90vh] overflow-y-auto rose-scroll">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="font-display text-2xl" id="modalAgendamentoTitulo">Novo agendamento</h3>
+      <button class="modal-close text-2xl text-[#8a7f7c]" data-modal="modalAgendamento">&times;</button>
+    </div>
+    <form id="formAgendamento" class="space-y-3">
+      <input type="hidden" id="agId">
+      <div>
+        <label class="text-xs uppercase text-[#8a7f7c]">Cliente</label>
+        <input id="agClienteNome" list="listaClientes" required class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1" placeholder="Nome do cliente">
+        <datalist id="listaClientes"></datalist>
+      </div>
+      <div>
+        <label class="text-xs uppercase text-[#8a7f7c]">Telefone (WhatsApp)</label>
+        <input id="agClienteTelefone" required class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1" placeholder="55DDDNÚMERO">
+      </div>
+      <div>
+        <label class="text-xs uppercase text-[#8a7f7c]">Serviço</label>
+        <select id="agServico" class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1"></select>
+      </div>
+      <div class="grid grid-cols-3 gap-3">
+        <div>
+          <label class="text-xs uppercase text-[#8a7f7c]">Data</label>
+          <input id="agData" type="date" required class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1">
+        </div>
+        <div>
+          <label class="text-xs uppercase text-[#8a7f7c]">Início</label>
+          <input id="agHoraInicio" type="time" required class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1">
+        </div>
+        <div>
+          <label class="text-xs uppercase text-[#8a7f7c]">Fim</label>
+          <input id="agHoraFim" type="time" required class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs uppercase text-[#8a7f7c]">Valor (R$)</label>
+          <input id="agValor" type="number" step="0.01" class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1">
+        </div>
+        <div>
+          <label class="text-xs uppercase text-[#8a7f7c]">Status</label>
+          <select id="agStatus" class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1">
+            <option>Confirmado</option>
+            <option>Concluído</option>
+            <option>Cancelado</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="text-xs uppercase text-[#8a7f7c]">Observações</label>
+        <textarea id="agObs" rows="2" class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1"></textarea>
+      </div>
+
+      <p id="agError" class="text-red-500 text-sm hidden"></p>
+
+      <div class="flex justify-between items-center pt-2">
+        <button type="button" id="agWhatsBtn" class="btn-ghost px-4 py-2 rounded-lg text-sm hidden">Enviar lembrete no WhatsApp</button>
+        <div class="flex gap-2 ml-auto">
+          <button type="button" id="agDeleteBtn" class="hidden px-4 py-2 rounded-lg text-sm text-red-500 border border-red-200 hover:bg-red-50">Excluir</button>
+          <button type="submit" class="btn-primary px-5 py-2 rounded-lg text-sm">Salvar</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============== MODAL: CLIENTE ============== -->
+<div id="modalCliente" class="fixed inset-0 modal-backdrop hidden items-center justify-center z-50 p-4">
+  <div class="card w-full max-w-md p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="font-display text-2xl" id="modalClienteTitulo">Novo cliente</h3>
+      <button class="modal-close text-2xl text-[#8a7f7c]" data-modal="modalCliente">&times;</button>
+    </div>
+    <form id="formCliente" class="space-y-3">
+      <input type="hidden" id="cliId">
+      <div>
+        <label class="text-xs uppercase text-[#8a7f7c]">Nome</label>
+        <input id="cliNome" required class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1">
+      </div>
+      <div>
+        <label class="text-xs uppercase text-[#8a7f7c]">Telefone</label>
+        <input id="cliTelefone" required class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1" placeholder="55DDDNÚMERO">
+      </div>
+      <div>
+        <label class="text-xs uppercase text-[#8a7f7c]">Observações</label>
+        <textarea id="cliObs" rows="3" class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1"></textarea>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" id="cliDeleteBtn" class="hidden px-4 py-2 rounded-lg text-sm text-red-500 border border-red-200 hover:bg-red-50">Excluir</button>
+        <button type="submit" class="btn-primary px-5 py-2 rounded-lg text-sm">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============== MODAL: SERVIÇO ============== -->
+<div id="modalServico" class="fixed inset-0 modal-backdrop hidden items-center justify-center z-50 p-4">
+  <div class="card w-full max-w-md p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="font-display text-2xl" id="modalServicoTitulo">Novo serviço</h3>
+      <button class="modal-close text-2xl text-[#8a7f7c]" data-modal="modalServico">&times;</button>
+    </div>
+    <form id="formServico" class="space-y-3">
+      <input type="hidden" id="srvId">
+      <div>
+        <label class="text-xs uppercase text-[#8a7f7c]">Nome</label>
+        <input id="srvNome" required class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1" placeholder="Ex: Manicure">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs uppercase text-[#8a7f7c]">Duração (min)</label>
+          <input id="srvDuracao" type="number" min="0" step="5" class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1" placeholder="60">
+        </div>
+        <div>
+          <label class="text-xs uppercase text-[#8a7f7c]">Valor (R$)</label>
+          <input id="srvPreco" type="number" min="0" step="0.01" class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1" placeholder="0,00">
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" id="srvDeleteBtn" class="hidden px-4 py-2 rounded-lg text-sm text-red-500 border border-red-200 hover:bg-red-50">Excluir</button>
+        <button type="submit" class="btn-primary px-5 py-2 rounded-lg text-sm">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============== MODAL: FINANCEIRO ============== -->
+<div id="modalFinanceiro" class="fixed inset-0 modal-backdrop hidden items-center justify-center z-50 p-4">
+  <div class="card w-full max-w-md p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="font-display text-2xl">Novo lançamento</h3>
+      <button class="modal-close text-2xl text-[#8a7f7c]" data-modal="modalFinanceiro">&times;</button>
+    </div>
+    <form id="formFinanceiro" class="space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs uppercase text-[#8a7f7c]">Tipo</label>
+          <select id="finTipo" class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1">
+            <option value="Entrada">Entrada</option>
+            <option value="Saida">Saída</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs uppercase text-[#8a7f7c]">Data</label>
+          <input id="finData" type="date" class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1">
+        </div>
+      </div>
+      <div>
+        <label class="text-xs uppercase text-[#8a7f7c]">Descrição</label>
+        <input id="finDescricao" required class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs uppercase text-[#8a7f7c]">Categoria</label>
+          <input id="finCategoria" class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1" placeholder="Ex: Serviço, Produto, Aluguel">
+        </div>
+        <div>
+          <label class="text-xs uppercase text-[#8a7f7c]">Valor (R$)</label>
+          <input id="finValor" type="number" step="0.01" required class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs uppercase text-[#8a7f7c]">Forma de pagamento</label>
+          <select id="finForma" class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1">
+            <option>Pix</option>
+            <option>Dinheiro</option>
+            <option>Cartão de Débito</option>
+            <option>Cartão de Crédito</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs uppercase text-[#8a7f7c]">Status</label>
+          <select id="finStatus" class="w-full border border-[#e0d6d3] rounded-lg px-3 py-2 mt-1">
+            <option>Pago</option>
+            <option>Pendente</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex justify-end pt-2">
+        <button type="submit" class="btn-primary px-5 py-2 rounded-lg text-sm">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Toasts -->
+<div id="toastContainer" class="fixed bottom-5 right-5 flex flex-col gap-2 z-[60]"></div>
+
+<script>
+/* =========================================================
+   CONFIGURAÇÃO — troque pela URL do seu Web App implantado
+   ========================================================= */
+const API_URL = 'https://script.google.com/macros/s/AKfycby1dMqwddKljkZswKqR6FgIRb_ohJoegzSAMTbi-1ZoZeOvaqeBVXnH8LEY7PMdyo6L/exec';
+
+const TOKEN_KEY = 'rosenails_token';
+
+/* ================= HELPERS DE API ================= */
+let sessaoExpirada = false;
+
+/**
+ * Detecta sessão expirada/ inválida de forma centralizada. O backend marca
+ * essas respostas com authError:true. Ao detectar, limpa o token e volta para
+ * a tela de login — antes o frontend não detectava isso e as telas ficavam
+ * vazias após o F5 (o token expira e toda chamada passava a falhar em silêncio).
+ *
+ * NOVO: o backend agora devolve `renewedToken` em toda resposta autenticada
+ * com sucesso — é uma sessão "deslizante": cada chamada renova a validade do
+ * token. Assim, enquanto o site estiver sendo usado normalmente, a sessão
+ * nunca chega a expirar no meio do trabalho, e o F5 deixa de zerar os dados.
+ */
+function handleAuthResponse(json) {
+  if (json && json.renewedToken) {
+    localStorage.setItem(TOKEN_KEY, json.renewedToken);
+  }
+  if (json && json.authError) {
+    if (!sessaoExpirada) {
+      sessaoExpirada = true;
+      localStorage.removeItem(TOKEN_KEY);
+      forcarLogin('Sua sessão expirou. Faça login novamente.');
+    }
+  }
+  return json;
+}
+
+async function apiGet(action, params = {}) {
+  const url = new URL(API_URL);
+  url.searchParams.set('action', action);
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (token) url.searchParams.set('token', token);
+  Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null) url.searchParams.set(k, v); });
+  const res = await fetch(url.toString());
+  return handleAuthResponse(await res.json());
+}
+
+async function apiPost(action, data = {}) {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight CORS no Apps Script
+    body: JSON.stringify({ action, token, ...data })
+  });
+  return handleAuthResponse(await res.json());
+}
+
+/** Volta para a tela de login exibindo uma mensagem (usado quando a sessão expira). */
+function forcarLogin(mensagem) {
+  const app = document.getElementById('app');
+  app.classList.add('hidden');
+  app.classList.remove('flex');
+  const login = document.getElementById('loginScreen');
+  login.classList.remove('hidden');
+  if (mensagem) {
+    const errorEl = document.getElementById('loginError');
+    errorEl.textContent = mensagem;
+    errorEl.classList.remove('hidden');
+  }
+}
+
+/* ================= TOAST ================= */
+function showToast(message, type = 'ok') {
+  const el = document.createElement('div');
+  el.className = 'toast px-4 py-3 rounded-lg shadow-lg text-sm text-white ' + (type === 'erro' ? 'bg-red-500' : 'bg-[#232323]');
+  el.textContent = message;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+/* ================= LOGIN ================= */
+const loginScreen = document.getElementById('loginScreen');
+const appEl = document.getElementById('app');
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('loginBtn');
+  const errorEl = document.getElementById('loginError');
+  errorEl.classList.add('hidden');
+  btn.disabled = true; btn.textContent = 'Entrando…';
+
+  const usuario = document.getElementById('loginUser').value.trim();
+  const senha = document.getElementById('loginPass').value;
+
+  try {
+    const resp = await apiPost('login', { usuario, senha });
+    if (resp.error) {
+      errorEl.textContent = resp.message;
+      errorEl.classList.remove('hidden');
+    } else {
+      localStorage.setItem(TOKEN_KEY, resp.token);
+      sessaoExpirada = false;
+      startApp();
+    }
+  } catch (err) {
+    errorEl.textContent = 'Não foi possível conectar ao servidor.';
+    errorEl.classList.remove('hidden');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Entrar';
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  localStorage.removeItem(TOKEN_KEY);
+  location.reload();
+});
+
+function startApp() {
+  loginScreen.classList.add('hidden');
+  appEl.classList.remove('hidden');
+  appEl.classList.add('flex');
+  initApp();
+}
+
+/* ================= NAVEGAÇÃO ================= */
+function initApp() {
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+      document.getElementById('section-' + btn.dataset.section).classList.remove('hidden');
+      if (btn.dataset.section === 'agenda') calendar.render();
+      closeSidebar();
+    });
+  });
+
+  document.querySelectorAll('.modal-close').forEach(btn => {
+    btn.addEventListener('click', () => closeModal(btn.dataset.modal));
+  });
+
+  // Menu mobile (gaveta lateral)
+  const asideEl = document.querySelector('aside');
+  const overlayEl = document.getElementById('sidebarOverlay');
+  document.getElementById('menuToggle').addEventListener('click', () => {
+    asideEl.classList.add('sidebar-open');
+    overlayEl.classList.remove('hidden');
+  });
+  overlayEl.addEventListener('click', closeSidebar);
+  function closeSidebar(){
+    asideEl.classList.remove('sidebar-open');
+    overlayEl.classList.add('hidden');
+  }
+
+  const hoje = new Date().toISOString().slice(0, 7);
+  document.getElementById('dashMonth').value = hoje;
+  document.getElementById('finMonth').value = hoje;
+  document.getElementById('dashMonth').addEventListener('change', loadDashboard);
+  document.getElementById('finMonth').addEventListener('change', loadFinanceiro);
+
+  loadServicos();
+  loadClientes();
+  loadDashboard();
+  loadFinanceiro();
+  setupCalendar();
+
+  document.getElementById('novoAgendamentoBtn').addEventListener('click', () => openModalAgendamento());
+  document.getElementById('novoClienteBtn').addEventListener('click', () => openModalCliente());
+  document.getElementById('novoFinBtn').addEventListener('click', () => openModal('modalFinanceiro'));
+  document.getElementById('novoServicoBtn').addEventListener('click', () => openModalServico());
+
+  document.getElementById('formAgendamento').addEventListener('submit', salvarAgendamento);
+  document.getElementById('formCliente').addEventListener('submit', salvarCliente);
+  document.getElementById('formFinanceiro').addEventListener('submit', salvarFinanceiro);
+  document.getElementById('formServico').addEventListener('submit', salvarServico);
+  document.getElementById('agDeleteBtn').addEventListener('click', excluirAgendamento);
+  document.getElementById('cliDeleteBtn').addEventListener('click', excluirCliente);
+  document.getElementById('srvDeleteBtn').addEventListener('click', excluirServico);
+  document.getElementById('buscaCliente').addEventListener('input', filtrarClientes);
+
+  document.getElementById('agServico').addEventListener('change', aplicarDuracaoServico);
+}
+
+function openModal(id) {
+  const m = document.getElementById(id);
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+}
+function closeModal(id) {
+  const m = document.getElementById(id);
+  m.classList.add('hidden');
+  m.classList.remove('flex');
+}
+
+/* ================= DASHBOARD ================= */
+async function loadDashboard() {
+  const mes = document.getElementById('dashMonth').value;
+  const resp = await apiGet('getDashboard', { mes });
+  if (resp.error) { if (!resp.authError) showToast(resp.message, 'erro'); return; }
+  const d = resp.data;
+  document.getElementById('mReceita').textContent = formatMoeda(d.receitaMensal);
+  document.getElementById('mAtendimentos').textContent = d.atendimentosMes ?? 0;
+  document.getElementById('mOcupacao').textContent = d.taxaOcupacao + '%';
+  document.getElementById('mSaldo').textContent = formatMoeda(d.saldoMensal);
+
+  renderProdutividade(d.produtividadePorSemana || []);
+  loadHorasSemana();
+
+  const hojeISO = new Date().toISOString().slice(0, 10);
+  const ag = await apiGet('getAgendamentos', { dataInicio: hojeISO, dataFim: hojeISO });
+  const lista = document.getElementById('hojeLista');
+  lista.innerHTML = '';
+  if (!ag.data || ag.data.length === 0) {
+    lista.innerHTML = '<p class="text-[#8a7f7c] py-3">Nenhum agendamento para hoje.</p>';
+  } else {
+    ag.data.sort((a, b) => a.HoraInicio.localeCompare(b.HoraInicio)).forEach(a => {
+      lista.innerHTML += `<div class="flex justify-between items-center py-2.5">
+        <div><span class="font-medium">${a.HoraInicio} – ${a.HoraFim}</span> · ${a.ClienteNome} <span class="text-[#8a7f7c]">(${a.Servico})</span></div>
+        <span class="text-xs px-2 py-1 rounded-full ${a.Status === 'Cancelado' ? 'badge-saida' : 'badge-entrada'}">${a.Status}</span>
+      </div>`;
+    });
+  }
+}
+
+function formatMoeda(v) {
+  return 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+}
+
+/** Formata minutos como "XhYY" (ex.: 90 -> "1h30"). */
+function formatHoras(minutos) {
+  const m = Math.max(0, Math.round(Number(minutos) || 0));
+  const h = Math.floor(m / 60);
+  const min = m % 60;
+  return h + 'h' + String(min).padStart(2, '0');
+}
+
+/** Renderiza as barras de produtividade por período do mês e destaca o pico. */
+function renderProdutividade(semanas) {
+  const cont = document.getElementById('prodPorSemana');
+  const topoEl = document.getElementById('prodTopo');
+  if (!cont) return;
+  const max = Math.max(1, ...semanas.map(s => s.qtd));
+  const total = semanas.reduce((s, x) => s + x.qtd, 0);
+  const pico = semanas.reduce((a, b) => (b.qtd > a.qtd ? b : a), { qtd: -1, label: '' });
+  topoEl.textContent = total > 0 && pico.qtd > 0 ? 'Pico: ' + pico.label : '';
+  cont.innerHTML = semanas.map(s => {
+    const pct = Math.round((s.qtd / max) * 100);
+    const destaque = s.qtd === pico.qtd && s.qtd > 0;
+    return `<div>
+      <div class="flex justify-between text-xs mb-1">
+        <span class="${destaque ? 'text-[var(--rose-dark)] font-semibold' : 'text-[#8a7f7c]'}">${s.label}</span>
+        <span class="${destaque ? 'text-[var(--rose-dark)] font-semibold' : 'text-[#8a7f7c]'}">${s.qtd}</span>
+      </div>
+      <div class="w-full h-2 rounded-full bg-[#f2ebe8] overflow-hidden">
+        <div class="h-full rounded-full" style="width:${pct}%;background:${destaque ? 'var(--rose-dark)' : 'var(--rose-light)'}"></div>
+      </div>
+    </div>`;
+  }).join('') || '<p class="text-[#8a7f7c] text-sm">Sem atendimentos no mês.</p>';
+}
+
+/** Retorna o intervalo ISO [segunda, domingo] da semana atual. */
+function intervaloSemanaAtual() {
+  const hoje = new Date();
+  const diaSemana = (hoje.getDay() + 6) % 7; // 0 = segunda
+  const inicio = new Date(hoje); inicio.setDate(hoje.getDate() - diaSemana);
+  const fim = new Date(inicio); fim.setDate(inicio.getDate() + 6);
+  const iso = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return { inicio: iso(inicio), fim: iso(fim) };
+}
+
+/**
+ * Calcula horas trabalhadas na semana atual a partir dos agendamentos
+ * (soma da duração de cada atendimento não cancelado) e a média por dia
+ * que teve atendimento.
+ */
+async function loadHorasSemana() {
+  const { inicio, fim } = intervaloSemanaAtual();
+  const resp = await apiGet('getAgendamentos', { dataInicio: inicio, dataFim: fim });
+  if (resp.error) return;
+  const ativos = (resp.data || []).filter(a => a.Status !== 'Cancelado');
+  let totalMin = 0;
+  const diasComAtendimento = new Set();
+  ativos.forEach(a => {
+    const [h1, m1] = String(a.HoraInicio).split(':').map(Number);
+    const [h2, m2] = String(a.HoraFim).split(':').map(Number);
+    const dur = (h2 * 60 + m2) - (h1 * 60 + m1);
+    if (dur > 0) { totalMin += dur; diasComAtendimento.add(a.Data); }
+  });
+  const nDias = diasComAtendimento.size || 0;
+  const mediaMin = nDias > 0 ? totalMin / nDias : 0;
+  document.getElementById('mHorasSemana').textContent = formatHoras(totalMin);
+  document.getElementById('mHorasMedia').textContent =
+    `Média diária: ${formatHoras(mediaMin)} · ${ativos.length} atendimento${ativos.length === 1 ? '' : 's'}`;
+}
+
+/* ================= AGENDA / CALENDÁRIO ================= */
+let calendar;
+let servicosCache = [];
+
+function setupCalendar() {
+  const calendarEl = document.getElementById('calendar');
+  const isMobile = window.innerWidth < 768;
+  calendar = new FullCalendar.Calendar(calendarEl, {
+    locale: 'pt-br',
+    height: isMobile ? 520 : 680,
+    headerToolbar: isMobile
+      ? { left: 'prev,next today', center: '', right: 'title' }
+      : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' },
+    initialView: isMobile ? 'timeGridDay' : 'timeGridWeek',
+    slotMinTime: '08:00:00',
+    slotMaxTime: '19:00:00',
+    events: fetchEventosCalendario,
+    dateClick: (info) => openModalAgendamento(null, info.dateStr),
+    eventClick: (info) => openModalAgendamento(info.event.extendedProps.raw)
+  });
+
+  window.addEventListener('resize', () => {
+    const mobileNow = window.innerWidth < 768;
+    calendar.setOption('height', mobileNow ? 520 : 680);
+  });
+}
+
+async function fetchEventosCalendario(info, successCallback) {
+  const resp = await apiGet('getAgendamentos', {
+    dataInicio: info.startStr.slice(0, 10),
+    dataFim: info.endStr.slice(0, 10)
+  });
+  if (resp.error) { successCallback([]); return; }
+  const eventos = (resp.data || []).map(a => ({
+    id: a.ID,
+    title: a.ClienteNome + ' · ' + a.Servico,
+    start: a.Data + 'T' + a.HoraInicio,
+    end: a.Data + 'T' + a.HoraFim,
+    classNames: ['status-' + String(a.Status).toLowerCase().replace('í', 'i').replace('ã','a')],
+    extendedProps: { raw: a }
+  }));
+  successCallback(eventos);
+}
+
+async function loadServicos() {
+  const resp = await apiGet('getServicos');
+  if (resp.error) return;
+  servicosCache = resp.data || [];
+  const sel = document.getElementById('agServico');
+  sel.innerHTML = servicosCache.map(s => `<option value="${s.Nome}" data-duracao="${s.DuracaoMinutos}" data-preco="${s.Preco}">${s.Nome}</option>`).join('');
+  renderServicos();
+}
+
+function renderServicos() {
+  const tbody = document.getElementById('servicosTbody');
+  if (!tbody) return;
+  tbody.innerHTML = servicosCache.map(s => `
+    <tr>
+      <td class="px-4 py-3">${s.Nome}</td>
+      <td class="px-4 py-3">${Number(s.DuracaoMinutos) || 0} min</td>
+      <td class="px-4 py-3 text-right">${formatMoeda(s.Preco)}</td>
+      <td class="px-4 py-3 text-right">
+        <button class="text-[var(--rose-dark)] hover:underline text-xs" onclick='openModalServico(${JSON.stringify(s).replace(/'/g, "&apos;")})'>Editar</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="4" class="px-4 py-6 text-center text-[#8a7f7c]">Nenhum serviço cadastrado.</td></tr>';
+}
+
+function openModalServico(servico = null) {
+  const form = document.getElementById('formServico');
+  form.reset();
+  document.getElementById('srvDeleteBtn').classList.toggle('hidden', !servico);
+  if (servico) {
+    document.getElementById('modalServicoTitulo').textContent = 'Editar serviço';
+    document.getElementById('srvId').value = servico.ID;
+    document.getElementById('srvNome').value = servico.Nome;
+    document.getElementById('srvDuracao').value = servico.DuracaoMinutos;
+    document.getElementById('srvPreco').value = servico.Preco;
+  } else {
+    document.getElementById('modalServicoTitulo').textContent = 'Novo serviço';
+    document.getElementById('srvId').value = '';
+  }
+  openModal('modalServico');
+}
+
+async function salvarServico(e) {
+  e.preventDefault();
+  const data = {
+    ID: document.getElementById('srvId').value || undefined,
+    Nome: document.getElementById('srvNome').value,
+    DuracaoMinutos: document.getElementById('srvDuracao').value || 60,
+    Preco: document.getElementById('srvPreco').value || 0
+  };
+  const resp = data.ID ? await apiPost('updateServico', { data }) : await apiPost('addServico', { data });
+  if (resp.error) return showToast(resp.message, 'erro');
+  showToast('Serviço salvo com sucesso.');
+  closeModal('modalServico');
+  loadServicos(); // atualiza tabela e o <select> do agendamento
+}
+
+async function excluirServico() {
+  const id = document.getElementById('srvId').value;
+  if (!id || !confirm('Excluir este serviço?')) return;
+  const resp = await apiPost('deleteServico', { id });
+  if (resp.error) return showToast(resp.message, 'erro');
+  showToast('Serviço excluído.');
+  closeModal('modalServico');
+  loadServicos();
+}
+
+function aplicarDuracaoServico() {
+  const sel = document.getElementById('agServico');
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt) return;
+  document.getElementById('agValor').value = opt.dataset.preco || '';
+  const inicio = document.getElementById('agHoraInicio').value;
+  if (inicio) {
+    const [h, m] = inicio.split(':').map(Number);
+    const totalMin = h * 60 + m + Number(opt.dataset.duracao || 60);
+    const fim = String(Math.floor(totalMin / 60)).padStart(2, '0') + ':' + String(totalMin % 60).padStart(2, '0');
+    document.getElementById('agHoraFim').value = fim;
+  }
+}
+
+function openModalAgendamento(agendamento = null, dataInicial = null) {
+  const form = document.getElementById('formAgendamento');
+  form.reset();
+  document.getElementById('agError').classList.add('hidden');
+  document.getElementById('agWhatsBtn').classList.add('hidden');
+  document.getElementById('agDeleteBtn').classList.add('hidden');
+
+  if (agendamento) {
+    document.getElementById('modalAgendamentoTitulo').textContent = 'Editar agendamento';
+    document.getElementById('agId').value = agendamento.ID;
+    document.getElementById('agClienteNome').value = agendamento.ClienteNome;
+    document.getElementById('agClienteTelefone').value = agendamento.ClienteTelefone;
+    document.getElementById('agServico').value = agendamento.Servico;
+    document.getElementById('agData').value = agendamento.Data;
+    document.getElementById('agHoraInicio').value = agendamento.HoraInicio;
+    document.getElementById('agHoraFim').value = agendamento.HoraFim;
+    document.getElementById('agValor').value = agendamento.Valor;
+    document.getElementById('agStatus').value = agendamento.Status;
+    document.getElementById('agObs').value = agendamento.Observacoes;
+    document.getElementById('agWhatsBtn').classList.remove('hidden');
+    document.getElementById('agDeleteBtn').classList.remove('hidden');
+    document.getElementById('agWhatsBtn').onclick = () => enviarLembrete(agendamento);
+  } else {
+    document.getElementById('modalAgendamentoTitulo').textContent = 'Novo agendamento';
+    document.getElementById('agId').value = '';
+    if (dataInicial) document.getElementById('agData').value = dataInicial.slice(0, 10);
+  }
+  openModal('modalAgendamento');
+}
+
+async function salvarAgendamento(e) {
+  e.preventDefault();
+  const errorEl = document.getElementById('agError');
+  errorEl.classList.add('hidden');
+
+  const data = {
+    ID: document.getElementById('agId').value || undefined,
+    ClienteNome: document.getElementById('agClienteNome').value,
+    ClienteTelefone: document.getElementById('agClienteTelefone').value,
+    Servico: document.getElementById('agServico').value,
+    Data: document.getElementById('agData').value,
+    HoraInicio: document.getElementById('agHoraInicio').value,
+    HoraFim: document.getElementById('agHoraFim').value,
+    Valor: document.getElementById('agValor').value,
+    Status: document.getElementById('agStatus').value,
+    Observacoes: document.getElementById('agObs').value
+  };
+
+  const isEdicao = !!data.ID;
+  const resp = isEdicao ? await apiPost('updateAgendamento', { data }) : await apiPost('addAgendamento', { data });
+
+  if (resp.error) {
+    errorEl.textContent = resp.message;
+    errorEl.classList.remove('hidden');
+    return;
+  }
+  showToast('Agendamento salvo com sucesso.');
+  closeModal('modalAgendamento');
+  calendar.refetchEvents();
+  loadDashboard();
+  loadFinanceiro();
+  loadClientes();
+}
+
+async function excluirAgendamento() {
+  const id = document.getElementById('agId').value;
+  if (!id || !confirm('Excluir este agendamento?')) return;
+  const resp = await apiPost('deleteAgendamento', { id });
+  if (resp.error) return showToast(resp.message, 'erro');
+  showToast('Agendamento excluído.');
+  closeModal('modalAgendamento');
+  // Remove o evento já renderizado imediatamente (antes dependia só do
+  // refetchEvents, e o evento continuava visível no calendário após excluir).
+  const ev = calendar.getEventById(id);
+  if (ev) ev.remove();
+  calendar.refetchEvents();
+  loadDashboard();
+  loadFinanceiro();
+}
+
+function enviarLembrete(agendamento) {
+  const numero = String(agendamento.ClienteTelefone).replace(/\D/g, '');
+  const mensagem = `Olá, ${agendamento.ClienteNome}! Passando para lembrar do seu horário na Rose Nails em ${formatarDataBR(agendamento.Data)} às ${agendamento.HoraInicio}, para ${agendamento.Servico}. Até logo! 🌹`;
+  window.open(`https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`, '_blank');
+}
+
+function formatarDataBR(iso) {
+  const [a, m, d] = iso.split('-');
+  return `${d}/${m}/${a}`;
+}
+
+/* ================= CLIENTES ================= */
+let clientesCache = [];
+
+async function loadClientes() {
+  const resp = await apiGet('getClientes');
+  clientesCache = resp.data || [];
+  renderClientes(clientesCache);
+  document.getElementById('listaClientes').innerHTML = clientesCache.map(c => `<option value="${c.Nome}" data-tel="${c.Telefone}">`).join('');
+
+  document.getElementById('agClienteNome').addEventListener('change', (e) => {
+    const cli = clientesCache.find(c => c.Nome === e.target.value);
+    if (cli) document.getElementById('agClienteTelefone').value = cli.Telefone;
+  });
+}
+
+function renderClientes(lista) {
+  const tbody = document.getElementById('clientesTbody');
+  tbody.innerHTML = lista.map(c => `
+    <tr>
+      <td class="px-4 py-3">${c.Nome}</td>
+      <td class="px-4 py-3">${c.Telefone}</td>
+      <td class="px-4 py-3">${formatarDataBR(String(c.DataCadastro).slice(0,10))}</td>
+      <td class="px-4 py-3 text-right">
+        <button class="text-[var(--rose-dark)] hover:underline text-xs" onclick='openModalCliente(${JSON.stringify(c).replace(/'/g, "&apos;")})'>Editar</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="4" class="px-4 py-6 text-center text-[#8a7f7c]">Nenhum cliente cadastrado.</td></tr>';
+}
+
+function filtrarClientes(e) {
+  const termo = e.target.value.toLowerCase();
+  renderClientes(clientesCache.filter(c => c.Nome.toLowerCase().includes(termo) || String(c.Telefone).includes(termo)));
+}
+
+function openModalCliente(cliente = null) {
+  const form = document.getElementById('formCliente');
+  form.reset();
+  document.getElementById('cliDeleteBtn').classList.toggle('hidden', !cliente);
+  if (cliente) {
+    document.getElementById('modalClienteTitulo').textContent = 'Editar cliente';
+    document.getElementById('cliId').value = cliente.ID;
+    document.getElementById('cliNome').value = cliente.Nome;
+    document.getElementById('cliTelefone').value = cliente.Telefone;
+    document.getElementById('cliObs').value = cliente.Observacoes;
+  } else {
+    document.getElementById('modalClienteTitulo').textContent = 'Novo cliente';
+    document.getElementById('cliId').value = '';
+  }
+  openModal('modalCliente');
+}
+
+async function salvarCliente(e) {
+  e.preventDefault();
+  const data = {
+    ID: document.getElementById('cliId').value || undefined,
+    Nome: document.getElementById('cliNome').value,
+    Telefone: document.getElementById('cliTelefone').value,
+    Observacoes: document.getElementById('cliObs').value
+  };
+  const resp = data.ID ? await apiPost('updateCliente', { data }) : await apiPost('addCliente', { data });
+  if (resp.error) return showToast(resp.message, 'erro');
+  showToast('Cliente salvo com sucesso.');
+  closeModal('modalCliente');
+  loadClientes();
+}
+
+async function excluirCliente() {
+  const id = document.getElementById('cliId').value;
+  if (!id || !confirm('Excluir este cliente?')) return;
+  const resp = await apiPost('deleteCliente', { id });
+  if (resp.error) return showToast(resp.message, 'erro');
+  showToast('Cliente excluído.');
+  closeModal('modalCliente');
+  loadClientes();
+}
+
+/* ================= FINANCEIRO ================= */
+async function loadFinanceiro() {
+  const mes = document.getElementById('finMonth').value;
+  const resp = await apiGet('getFinanceiro', { mes });
+  if (resp.error) { if (!resp.authError) showToast(resp.message, 'erro'); return; }
+  const lista = resp.data || [];
+
+  const entradas = lista.filter(f => f.Tipo === 'Entrada').reduce((s, f) => s + Number(f.Valor), 0);
+  const saidas = lista.filter(f => f.Tipo === 'Saida').reduce((s, f) => s + Number(f.Valor), 0);
+  document.getElementById('finEntradas').textContent = formatMoeda(entradas);
+  document.getElementById('finSaidas').textContent = formatMoeda(saidas);
+  document.getElementById('finSaldo').textContent = formatMoeda(entradas - saidas);
+
+  const tbody = document.getElementById('financeiroTbody');
+  tbody.innerHTML = lista.slice().reverse().map(f => `
+    <tr>
+      <td class="px-4 py-3">${formatarDataBR(String(f.Data).slice(0,10))}</td>
+      <td class="px-4 py-3">${f.Descricao}</td>
+      <td class="px-4 py-3"><span class="text-xs px-2 py-1 rounded-full ${f.Tipo === 'Entrada' ? 'badge-entrada' : 'badge-saida'}">${f.Tipo === 'Entrada' ? 'Entrada' : 'Saída'}</span></td>
+      <td class="px-4 py-3"><span class="text-xs px-2 py-1 rounded-full ${f.StatusPagamento === 'Pago' ? 'badge-pago' : 'badge-pendente'}">${f.FormaPagamento} · ${f.StatusPagamento}</span></td>
+      <td class="px-4 py-3 text-right">${formatMoeda(f.Valor)}</td>
+      <td class="px-4 py-3 text-right whitespace-nowrap">
+        ${f.StatusPagamento === 'Pendente' ? `<button class="text-[var(--rose-dark)] hover:underline text-xs mr-3" onclick="marcarComoPago('${f.ID}')">Marcar como pago</button>` : ''}
+        <button class="text-red-500 hover:underline text-xs" onclick="excluirFinanceiro('${f.ID}')">Excluir</button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="6" class="px-4 py-6 text-center text-[#8a7f7c]">Nenhum lançamento neste mês.</td></tr>';
+}
+
+async function salvarFinanceiro(e) {
+  e.preventDefault();
+  const data = {
+    Tipo: document.getElementById('finTipo').value,
+    Data: document.getElementById('finData').value || new Date().toISOString().slice(0, 10),
+    Descricao: document.getElementById('finDescricao').value,
+    Categoria: document.getElementById('finCategoria').value,
+    Valor: document.getElementById('finValor').value,
+    FormaPagamento: document.getElementById('finForma').value,
+    StatusPagamento: document.getElementById('finStatus').value
+  };
+  const resp = await apiPost('addFinanceiro', { data });
+  if (resp.error) return showToast(resp.message, 'erro');
+  showToast('Lançamento registrado.');
+  closeModal('modalFinanceiro');
+  document.getElementById('formFinanceiro').reset();
+  loadFinanceiro();
+  loadDashboard();
+}
+
+async function marcarComoPago(id) {
+  const resp = await apiPost('updateFinanceiro', { data: { ID: id, StatusPagamento: 'Pago' } });
+  if (resp.error) return showToast(resp.message, 'erro');
+  showToast('Lançamento marcado como pago.');
+  loadFinanceiro();
+  loadDashboard();
+}
+
+async function excluirFinanceiro(id) {
+  if (!confirm('Excluir este lançamento?')) return;
+  const resp = await apiPost('deleteFinanceiro', { id });
+  if (resp.error) return showToast(resp.message, 'erro');
+  showToast('Lançamento excluído.');
+  loadFinanceiro();
+  loadDashboard();
+}
+
+/**
+ * Verifica se já existe uma sessão salva e, se sim, entra direto no app.
+ * IMPORTANTE: esta chamada precisa ficar no FINAL do script, depois de todas
+ * as declarações (let calendar, let servicosCache, let clientesCache, etc.).
+ * Antes, esta linha ficava no topo do arquivo e disparava startApp() ->
+ * initApp() -> setupCalendar()/loadServicos()/loadClientes() ANTES dessas
+ * variáveis terem sido declaradas mais abaixo — o que quebrava com
+ * "ReferenceError: Cannot access '...' before initialization" toda vez que
+ * a página era recarregada (F5) já logado. Um login manual nunca disparava
+ * o erro porque só ocorre depois que a página inteira já carregou.
+ */
+if (localStorage.getItem(TOKEN_KEY)) startApp();
+</script>
+</body>
+</html>
