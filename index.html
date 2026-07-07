@@ -542,7 +542,7 @@
 /* =========================================================
    CONFIGURAÇÃO — troque pela URL do seu Web App implantado
    ========================================================= */
-const API_URL = 'https://script.google.com/macros/s/AKfycbzVSlqQe92ejAaAuUBQKFPkdGH-QUTYxFXEKNMjGvxC6tmOr6FShQOO3acy8kxCCAjc0g/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxR1NEXQ0xhJxCBS2mn-kUEohYj_nF-XtqyyroPFmOVomugKLvDsdCW0IGngcGSZIh5/exec';
 
 const TOKEN_KEY = 'rosenails_token';
 
@@ -556,14 +556,32 @@ let sessaoExpirada = false;
  * vazias após o F5 (o token expira e toda chamada passava a falhar em silêncio).
  */
 function handleAuthResponse(json) {
-  if (json && json.authError) {
-    if (!sessaoExpirada) {
-      sessaoExpirada = true;
-      localStorage.removeItem(TOKEN_KEY);
-      forcarLogin('Sua sessão expirou. Faça login novamente.');
-    }
+  // Detecta sessão expirada tanto pelo sinal novo (authError) quanto pela
+  // mensagem antiga do backend — assim funciona mesmo se o Apps Script ainda
+  // estiver rodando uma versão anterior do código.
+  const expirou = json && (json.authError ||
+    (json.error && /sess[aã]o inv[aá]lida|expirad/i.test(json.message || '')));
+  if (expirou && !sessaoExpirada) {
+    sessaoExpirada = true;
+    localStorage.removeItem(TOKEN_KEY);
+    forcarLogin('Sua sessão expirou. Faça login novamente.');
   }
   return json;
+}
+
+/**
+ * Lê a resposta como JSON de forma segura. O Apps Script às vezes devolve uma
+ * página HTML de erro (ex.: "unable to open the file") em vez de JSON; sem este
+ * tratamento, res.json() lançava exceção e travava a tela (o cadastro "congelava"
+ * sem feedback). Aqui devolvemos um erro tratável.
+ */
+async function parseJsonSafe(res) {
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    return { error: true, connError: true, message: 'Resposta inválida do servidor. Verifique a implantação do Apps Script (URL do Web App).' };
+  }
 }
 
 async function apiGet(action, params = {}) {
@@ -572,18 +590,26 @@ async function apiGet(action, params = {}) {
   const token = localStorage.getItem(TOKEN_KEY);
   if (token) url.searchParams.set('token', token);
   Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== null) url.searchParams.set(k, v); });
-  const res = await fetch(url.toString());
-  return handleAuthResponse(await res.json());
+  try {
+    const res = await fetch(url.toString());
+    return handleAuthResponse(await parseJsonSafe(res));
+  } catch (err) {
+    return { error: true, connError: true, message: 'Falha de conexão com o servidor.' };
+  }
 }
 
 async function apiPost(action, data = {}) {
   const token = localStorage.getItem(TOKEN_KEY);
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight CORS no Apps Script
-    body: JSON.stringify({ action, token, ...data })
-  });
-  return handleAuthResponse(await res.json());
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // evita preflight CORS no Apps Script
+      body: JSON.stringify({ action, token, ...data })
+    });
+    return handleAuthResponse(await parseJsonSafe(res));
+  } catch (err) {
+    return { error: true, connError: true, message: 'Falha de conexão com o servidor.' };
+  }
 }
 
 /** Volta para a tela de login exibindo uma mensagem (usado quando a sessão expira). */
