@@ -661,8 +661,6 @@ function startApp() {
   initApp();
 }
 
-if (localStorage.getItem(TOKEN_KEY)) startApp();
-
 /* ================= NAVEGAÇÃO ================= */
 function initApp() {
   document.querySelectorAll('.nav-item').forEach(btn => {
@@ -1187,6 +1185,19 @@ async function excluirFinanceiro(id) {
   loadFinanceiro();
   loadDashboard();
 }
+
+/**
+ * Verifica se já existe uma sessão salva e, se sim, entra direto no app.
+ * IMPORTANTE: esta chamada precisa ficar no FINAL do script, depois de todas
+ * as declarações (let calendar, let servicosCache, let clientesCache, etc.).
+ * Antes, esta linha ficava no topo do arquivo e disparava startApp() ->
+ * initApp() -> setupCalendar()/loadServicos()/loadClientes() ANTES dessas
+ * variáveis terem sido declaradas mais abaixo — o que quebrava com
+ * "ReferenceError: Cannot access '...' before initialization" toda vez que
+ * a página era recarregada (F5) já logado. Um login manual nunca disparava
+ * o erro porque só ocorre depois que a página inteira já carregou.
+ */
+if (localStorage.getItem(TOKEN_KEY)) startApp();
 </script>
 </body>
 </html>
